@@ -1,0 +1,277 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>jgetpass</artifactId>
+    <groupId>org.jrivard</groupId>
+    <version>0.0.1</version>
+    <packaging>jar</packaging>
+
+    <name>JGetPass: eDirectory Password Reader</name>
+
+    <description>Utility for reading passwords from eDirectory LDAP server</description>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.build.timestamp.format>yyyy-MM-dd'T'HH:mm:ss'Z'</maven.build.timestamp.format>
+
+        <!-- git.commit.time is populated via git-commit-id-plugin and results in a (hopefully) reproducible maven build -->
+        <project.build.outputTimestamp>${git.commit.time}</project.build.outputTimestamp>
+    </properties>
+
+    <licenses>
+        <license>
+            <name>GNU Lesser General Public License, version 2.1 (LGPLv2.1)</name>
+            <url>http://www.gnu.org/licenses/lgpl-2.1.html</url>
+        </license>
+    </licenses>
+
+
+    <dependencies>
+        <!-- bundled -->
+        <dependency>
+            <groupId>com.github.ldapchai</groupId>
+            <artifactId>ldapchai</artifactId>
+            <version>0.8.5</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>1.2</version>
+        </dependency>
+        <dependency>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli</artifactId>
+            <version>4.7.5</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.reload4j</groupId>
+            <artifactId>reload4j</artifactId>
+            <version>1.2.25</version>
+        </dependency>
+
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.2</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+            <resource>
+                <directory>src/main/java</directory> <!-- include the src in the main output jar -->
+                <targetPath>src</targetPath>
+            </resource>
+        </resources>
+        <plugins>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.4.1</version>
+                <executions>
+                    <execution>
+                        <id>enforce-requirements</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>3.6.3</version>
+                                </requireMavenVersion>
+                                <requireJavaVersion>
+                                    <version>11</version>
+                                </requireJavaVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>2.42.0</version>
+                <goals>check</goals>
+                <configuration>
+                    <formats>
+                        <!-- you can define as many formats as you want, each is independent -->
+                        <format>
+                            <!-- define the files to apply to -->
+                            <includes>
+                                <include>.gitattributes</include>
+                                <include>.gitignore</include>
+                            </includes>
+                            <!-- define the steps to apply to those files -->
+                            <trimTrailingWhitespace/>
+                            <endWithNewline/>
+                            <indent>
+                                <tabs>true</tabs>
+                                <spacesPerTab>4</spacesPerTab>
+                            </indent>
+                        </format>
+                    </formats>
+                    <!-- define a language-specific format -->
+                    <java>
+                        <!-- no need to specify files, inferred automatically, but you can if you want -->
+
+                        <!-- apply a specific flavor of google-java-format and reflow long strings -->
+
+
+                        <!-- make sure every file has the following copyright header.
+                          optionally, Spotless can set copyright years by digging
+                          through git history (see "license" section below) -->
+                        <licenseHeader>
+                             <file>${project.basedir}/license-header-java.txt</file>
+                        </licenseHeader>
+                    </java>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>pl.project13.maven</groupId>
+                <artifactId>git-commit-id-plugin</artifactId>
+                <version>4.9.10</version>
+                <executions>
+                    <execution>
+                        <id>get-the-git-infos</id>
+                        <goals>
+                            <goal>revision</goal>
+                        </goals>
+                        <phase>initialize</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <failOnNoGitDirectory>false</failOnNoGitDirectory>
+                    <dateFormat>yyyy-MM-dd'T'HH:mm:ss'Z'</dateFormat>
+                    <dateFormatTimeZone>Zulu</dateFormatTimeZone>
+                    <gitDescribe>
+                        <tags>true</tags>
+                    </gitDescribe>
+                    <excludeProperties>
+                        <!-- git.build.time is current timestamp so prevents reproducible build -->
+                        <excludeProperty>git.build.time</excludeProperty>
+                    </excludeProperties>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.12.1</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                    <showWarnings>true</showWarnings>
+                    <compilerArgument>-Xlint:deprecation</compilerArgument>
+
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.3.0</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addDefaultEntries>false</addDefaultEntries>
+                            <addDefaultImplementationEntries>false</addDefaultImplementationEntries>
+                        </manifest>
+                        <manifestEntries>
+                            <Archive-Type>jar</Archive-Type>
+                            <Main-Class>org.jrivard.jgetpass.JGetPassMain</Main-Class>
+                            <Implementation-Title>${project.name}</Implementation-Title>
+                            <Implementation-Version>${project.version}</Implementation-Version>
+                            <Implementation-Vendor>${project.organization.name}</Implementation-Vendor>
+                            <Implementation-URL>${project.organization.url}</Implementation-URL>
+                            <Implementation-Build-Java-Version>${maven.compiler.target}</Implementation-Build-Java-Version>
+                            <SCM-Git-Branch>${git.branch}</SCM-Git-Branch>
+                            <SCM-Git-Commit-ID>${git.commit.id}</SCM-Git-Commit-ID>
+                            <SCM-Git-Commit-ID-Abbrev>${git.commit.id.abbrev}</SCM-Git-Commit-ID-Abbrev>
+                            <SCM-Git-Commit-ID-Description>${git.commit.id.describe}</SCM-Git-Commit-ID-Description>
+                            <SCM-Git-Commit-Timestamp>${git.commit.time}</SCM-Git-Commit-Timestamp>
+                            <SCM-Git-Commit-Dirty>${git.dirty}</SCM-Git-Commit-Dirty>
+                            <SCM-Git-Remote-Origin-URL>${git.remote.origin.url}</SCM-Git-Remote-Origin-URL>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.6.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <finalName>${project.artifactId}-${project.version}-executable</finalName>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <archive>
+                                <manifest>
+                                    <addDefaultEntries>false</addDefaultEntries>
+                                    <addDefaultImplementationEntries>false</addDefaultImplementationEntries>
+                                </manifest>
+                                <manifestEntries>
+                                    <Archive-Type>jar</Archive-Type>
+                                    <Main-Class>org.jrivard.jgetpass.JGetPassMain</Main-Class>
+                                    <Implementation-Title>${project.name}</Implementation-Title>
+                                    <Implementation-Version>${project.version}</Implementation-Version>
+                                    <Implementation-Vendor>${project.organization.name}</Implementation-Vendor>
+                                    <Implementation-URL>${project.organization.url}</Implementation-URL>
+                                    <Implementation-Build-Java-Version>${maven.compiler.target}</Implementation-Build-Java-Version>
+                                    <SCM-Git-Branch>${git.branch}</SCM-Git-Branch>
+                                    <SCM-Git-Commit-ID>${git.commit.id}</SCM-Git-Commit-ID>
+                                    <SCM-Git-Commit-ID-Abbrev>${git.commit.id.abbrev}</SCM-Git-Commit-ID-Abbrev>
+                                    <SCM-Git-Commit-ID-Description>${git.commit.id.describe}</SCM-Git-Commit-ID-Description>
+                                    <SCM-Git-Commit-Timestamp>${git.commit.time}</SCM-Git-Commit-Timestamp>
+                                    <SCM-Git-Commit-Dirty>${git.dirty}</SCM-Git-Commit-Dirty>
+                                    <SCM-Git-Remote-Origin-URL>${git.remote.origin.url}</SCM-Git-Remote-Origin-URL>
+                                </manifestEntries>
+                            </archive>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+
+
+        </plugins>
+    </build>
+
+    <developers>
+        <developer>
+            <name>Jason Rivard</name>
+            <email>https://github.com/jrivard</email>
+            <organizationUrl>https://github.com/jrivard/</organizationUrl>
+        </developer>
+    </developers>
+
+    <repositories>
+        <repository>
+            <id>central</id>
+            <url>https://repo1.maven.org/maven2</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+
+
+
+</project>
