@@ -26,16 +26,12 @@ import com.novell.ldapchai.provider.ChaiProviderFactory;
 import com.novell.ldapchai.provider.ChaiSetting;
 import com.novell.ldapchai.provider.DirectoryVendor;
 import com.novell.ldapchai.util.SearchHelper;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
+import java.io.IOException;
+import java.util.Map;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 
-import java.io.IOException;
-import java.util.Map;
-
-public class JGetPass
-{
+public class JGetPass {
     public static void execute(
             final String target,
             final String serverUrl,
@@ -43,12 +39,10 @@ public class JGetPass
             final String bindPW,
             final Appendable output,
             final boolean promiscuous,
-            final boolean noLinefeed
-    )
-            throws Exception
-    {
+            final boolean noLinefeed,
+            final RecordAppender.OutputFormat outputFormat)
+            throws Exception {
         LogManager.getRootLogger().setLevel(Level.OFF);
-
 
         final ChaiProviderFactory chaiProviderFactory = ChaiProviderFactory.newProviderFactory();
         final ChaiConfiguration chaiConfiguration = ChaiConfiguration.builder()
@@ -61,18 +55,16 @@ public class JGetPass
                 .build();
         final ChaiProvider chaiProvider = chaiProviderFactory.newProvider(chaiConfiguration);
 
-        if ( target.startsWith("(") && target.endsWith(")") )
-        {
-            multiOut(chaiProvider,target,output);
-        }
-        else
-        {
-            final ChaiUser chaiUser = ChaiEntryFactory.newChaiFactory(chaiProvider).newChaiUser(target);
+        if (target.startsWith("(") && target.endsWith(")")) {
+            multiOut(chaiProvider, target, output, outputFormat);
+        } else {
+            final ChaiUser chaiUser =
+                    ChaiEntryFactory.newChaiFactory(chaiProvider).newChaiUser(target);
             final String password = chaiUser.readPassword();
 
             output.append(password);
-            if ( !noLinefeed ) {
-                output.append( "\n" );
+            if (!noLinefeed) {
+                output.append("\n");
             }
         }
     }
@@ -80,28 +72,27 @@ public class JGetPass
     private static void multiOut(
             final ChaiProvider chaiProvider,
             final String target,
-            final Appendable output )
-            throws ChaiUnavailableException, ChaiOperationException, IOException
-    {
+            final Appendable output,
+            final RecordAppender.OutputFormat outputFormat)
+            throws ChaiUnavailableException, ChaiOperationException, IOException {
         final SearchHelper searchHelper = new SearchHelper();
         searchHelper.setFilter(target);
         final Map<String, Map<String, String>> results = chaiProvider.search("", searchHelper);
-        final CSVPrinter csvPrinter = new CSVPrinter(output, CSVFormat.DEFAULT );
-        for ( final String dn : results.keySet() )
-        {
+
+        final RecordAppender recordAppender = outputFormat.appender(output);
+
+        for (final String dn : results.keySet()) {
             String password = "";
             String error = "";
-            try
-            {
-                final ChaiUser chaiUser = ChaiEntryFactory.newChaiFactory(chaiProvider).newChaiUser(dn);
+            try {
+                final ChaiUser chaiUser =
+                        ChaiEntryFactory.newChaiFactory(chaiProvider).newChaiUser(dn);
                 password = chaiUser.readPassword();
-            }
-            catch ( Exception e )
-            {
+            } catch (Exception e) {
                 error = e.getMessage();
             }
 
-            csvPrinter.printRecord(dn, password, error);
+            recordAppender.appendRecord(dn, password, error);
         }
     }
 }

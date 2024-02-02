@@ -1,0 +1,29 @@
+# jgetpass
+Read user password values from eDirectory LDAP server.
+
+This utility will read password values from a Novell eDirectory LDAP server.   Password retreival requires that Universal Password be enabled,
+and that the bind user have supervisor permission to the user, and the explicit read password policy setting on the UP policy.
+
+When the target is an LDAP filter, the output will be in CSV format where the columns are:
+
+| Column 1 | Column 2 | Column 3
+| LDAP DN  | password | read error (if any)
+
+
+-- Example with DN --
+
+Input:
+java -jar getpass-0.0.0-executable.jar "cn=Heather Hitchcock,ou=bulk,o=data" -s='ldaps://127.0.0.1' -d='cn=admin,o=sa' -w='password'
+
+Output:
+password123
+
+-- Example with search --
+
+Input:
+java -jar getpass-0.0.0-executable.jar "(objectclass=inetOrgPerson)" -s='ldaps://127.0.0.1' -d='cn=admin,o=sa' -w='password'
+
+Output:
+"cn=Weiping Woods,ou=bulk,o=data",,object has no password attribute: error -16049
+"cn=Etty Saha,ou=bulk,o=data","!tCmbvRrP,64%k^",
+"cn=Heather Hitchcock,ou=bulk,o=data",password123,
